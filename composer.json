@@ -1,0 +1,17 @@
+{
+    "name": "zzg/php-elasticsearch-body-builder",
+    "type": "composer-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "zzg",
+            "email": "2466366466@qq.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "ZZG\\PhpElasticsearchBodyBuilder\\": "src/"
+        }
+    }
+}
