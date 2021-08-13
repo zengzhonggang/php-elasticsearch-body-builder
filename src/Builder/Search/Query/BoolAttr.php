@@ -9,7 +9,7 @@ use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Range;
 use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Term;
 use ZZG\PhpElasticsearchBodyBuilder\Exception\NoRangeOpException;
 
-class Bool
+class BoolAttr
 {
     private $condition = [
         'should' =>[],
@@ -91,7 +91,7 @@ class Bool
         $result = ['bool' => []];
         if (!empty($this->condition['and'])) {
             foreach ($this->condition['and'] as $item) {
-                $group = $item['is_not']?($item['is_ignore_score']?'filter':'must'):'must_not';
+                $group = !$item['is_not']?($item['is_ignore_score']?'filter':'must'):'must_not';
                 if ($item['type'] == 'group') {
                     $result['bool'][$group][] = $item['value']($this->createNewSelf($item['is_ignore_score']));
                 } elseif ($item['type'] == 'base') {
@@ -101,6 +101,8 @@ class Bool
                             $condition = $result['bool'][$group][(string)$item['field']]->cover($condition);
                         }
                         $result['bool'][$group][(string)$item['field']] = $condition;
+                    } else {
+                        $result['bool'][$group][] = $condition;
                     }
                 }
             }
@@ -109,9 +111,9 @@ class Bool
             $bool = $this->createNewSelf($this->getIsIgnoreScore());
             foreach ($this->condition['or'] as $item) {
                 if ($item['type'] == 'group') {
-                    $bool=$bool->whereGroup($item['value'],$item['is_ignore_score'],$item['is_not']);
+                    $bool=$bool->whereShouldGroup($item['value'],$item['is_ignore_score'],$item['is_not']);
                 } elseif($item['type']=='base') {
-                    $bool=$bool->where($item['field'],$item['op'],$item['value'],$item['is_ignore_score'],$item['is_not']);
+                    $bool=$bool->whereShould($item['field'],$item['op'],$item['value'],$item['is_ignore_score'],$item['is_not']);
                 }
             }
             if (!isset($result['bool']['must'])) {
@@ -132,6 +134,7 @@ class Bool
                         }
                         $result['bool'][$group][(string)$item['field']] = $condition;
                     }
+                    $result['bool'][$group][] = $condition;
                 }
             }
         }
