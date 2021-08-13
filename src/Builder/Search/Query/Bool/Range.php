@@ -34,7 +34,12 @@ class Range extends ConditionAbstract
         }
     }
 
-
+    public function cover(Range $range) {
+        foreach ($range->getValue() as $key => $value) {
+            $this->setValue($value,$this->getOp()[$key]);
+        }
+        return $this;
+    }
     /**
      * @throws NoRangeOpException
      */
@@ -49,6 +54,10 @@ class Range extends ConditionAbstract
         } else {
             throw new NoRangeOpException();
         }
+    }
+    public function getOp()
+    {
+        return $this->op;
     }
 
     /**

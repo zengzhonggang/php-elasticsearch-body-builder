@@ -4,53 +4,161 @@
 namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query;
 
 
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Match;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Range;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Term;
+use ZZG\PhpElasticsearchBodyBuilder\Exception\NoRangeOpException;
+
 class Bool
 {
     private $condition = [
-        'must' =>[],
-        'filter' => [],
-        'should' => [],
-        'must_not' =>[]
+        'should' =>[],
+        'and' =>[],
+        'or' => []
     ];
 
     private $is_ignore_score = false;
 
-    public function where($field,$op,$value,$isIgnoreScore = null)
+    public function where($field,$op,$value,$isIgnoreScore = null,$isNot = false)
     {
-
+        $this->condition['and'][] =[
+            'field' => $field,
+            'op' => $op,
+            'value' => $value,
+            'type' => 'base',
+            'is_ignore_score' => $this->getIsIgnoreScore($isIgnoreScore),
+            'is_not' => $isNot
+        ];
+        return $this;
+    }
+    public function orWhere($field,$op,$value,$isIgnoreScore = null,$isNot = false)
+    {
+        $this->condition['or'][] =[
+            'field' => $field,
+            'op' => $op,
+            'value' => $value,
+            'type' => 'base',
+            'is_ignore_score' => $this->getIsIgnoreScore($isIgnoreScore),
+            'is_not' => $isNot
+        ];
+        return $this;
+    }
+    public function whereGroup(\Closure $groupClosure,$isIgnoreScore = null,$isNot = false) {
+        $this->condition['and'][] =[
+            'type' => 'group',
+            'value' => $groupClosure,
+            'is_ignore_score' => $this->getIsIgnoreScore($isIgnoreScore),
+            'is_not' => $isNot
+        ];
+        return $this;
+    }
+    public function orWhereGroup(\Closure $groupClosure,$isIgnoreScore = null,$isNot = false) {
+        $this->condition['or'][] =[
+            'type' => 'group',
+            'value' => $groupClosure,
+            'is_ignore_score' => $this->getIsIgnoreScore($isIgnoreScore),
+            'is_not' => $isNot
+        ];
+        return $this;
     }
 
-    public function whereNot($field,$op,$value,$isIgnoreScore = null)
+    public function whereShould($field,$op,$value,$isIgnoreScore = null,$isNot = false)
     {
-
+        $this->condition['should'][] =[
+            'field' => $field,
+            'op' => $op,
+            'value' => $value,
+            'type' => 'base',
+            'is_ignore_score' => $this->getIsIgnoreScore($isIgnoreScore),
+            'is_not' => $isNot
+        ];
+        return $this;
     }
-
-    public function orWhere($field,$op,$value,$isIgnoreScore = null)
-    {
-
+    public function whereShouldGroup(\Closure $groupClosure,$isIgnoreScore = null,$isNot = false) {
+        $this->condition['should'][] =[
+            'type' => 'group',
+            'value' => $groupClosure,
+            'is_ignore_score' => $this->getIsIgnoreScore($isIgnoreScore),
+            'is_not' => $isNot
+        ];
+        return $this;
     }
-
-    public function orWhereNot($field,$op,$value,$isIgnoreScore = null)
-    {
-
+    public function toArray(){
+        return $this->build();
     }
-
-    public function whereBetween($field,$lop,$lvalue,$rop,$rvalue,$isIgnoreScore = null)
+    private function build()
     {
-
+        $result = ['bool' => []];
+        if (!empty($this->condition['and'])) {
+            foreach ($this->condition['and'] as $item) {
+                $group = $item['is_not']?($item['is_ignore_score']?'filter':'must'):'must_not';
+                if ($item['type'] == 'group') {
+                    $result['bool'][$group][] = $item['value']($this->createNewSelf($item['is_ignore_score']));
+                } elseif ($item['type'] == 'base') {
+                    $condition = $this->buildCondition($item['op'],$item['field'],$item['value']);
+                    if ($condition instanceof Range) {
+                        if (isset($result['bool'][$group][(string)$item['field']])) {
+                            $condition = $result['bool'][$group][(string)$item['field']]->cover($condition);
+                        }
+                        $result['bool'][$group][(string)$item['field']] = $condition;
+                    }
+                }
+            }
+        }
+        if (!empty($this->condition['or'])) {
+            $bool = $this->createNewSelf($this->getIsIgnoreScore());
+            foreach ($this->condition['or'] as $item) {
+                if ($item['type'] == 'group') {
+                    $bool=$bool->whereGroup($item['value'],$item['is_ignore_score'],$item['is_not']);
+                } elseif($item['type']=='base') {
+                    $bool=$bool->where($item['field'],$item['op'],$item['value'],$item['is_ignore_score'],$item['is_not']);
+                }
+            }
+            if (!isset($result['bool']['must'])) {
+                $result['bool']['must'] = [];
+            }
+            $result['bool']['must'][] = $bool;
+        }
+        if (!empty($this->condition['should'])) {
+            $group = 'should';
+            foreach ($this->condition['should'] as $item) {
+                if ($item['type'] == 'group') {
+                    $result['bool'][$group][] = $item['value']($this->createNewSelf($item['is_ignore_score']));
+                } elseif ($item['type'] == 'base') {
+                    $condition = $this->buildCondition($item['op'],$item['field'],$item['value']);
+                    if ($condition instanceof Range) {
+                        if (isset($result['bool'][$group][(string)$item['field']])) {
+                            $condition = $result['bool'][$group][(string)$item['field']]->cover($condition);
+                        }
+                        $result['bool'][$group][(string)$item['field']] = $condition;
+                    }
+                }
+            }
+        }
+        foreach ($result['bool'] as $group => $arr) {
+            foreach ($arr as $k=>$v) {
+                $arr[$k] = $v->toArray();
+            }
+            $result['bool'][$group] = array_values($arr);
+        }
+        return $result;
     }
-    public function orWhereBetween($field,$lop,$lvalue,$rop,$rvalue,$isIgnoreScore = null)
+    private function buildCondition($op,$field,$value)
     {
-
-    }
-
-    public function whereNotBetween($field,$lop,$lvalue,$rop,$rvalue,$isIgnoreScore = null)
-    {
-
-    }
-    public function orWhereNotBetween($field,$lop,$lvalue,$rop,$rvalue,$isIgnoreScore = null)
-    {
-
+        if ($op == '=') {
+            $condition = new Term();
+            $condition->setField($field);
+            $condition->setValue($value);
+        } elseif ($op == 'like') {
+            $condition = new Match();
+            $condition->setField($field);
+            $condition->setValue($value);
+        } elseif (in_array($op,['<','<=','>','>='])) {
+            $condition = new Range();
+            $condition->setField($field);
+            $condition->setValue($value,$op);
+        }
+        return $condition;
     }
     public function setIgnoreScore($bool)
     {
@@ -65,10 +173,8 @@ class Bool
         }
         return (bool) $isIgnoreScore;
     }
-    private function createCondition($conditionGroup,$op,$field,$value)
+    private function createNewSelf($isIgnoreScore)
     {
-
+        return (new self())->setIgnoreScore($isIgnoreScore);
     }
-
-    
 }
