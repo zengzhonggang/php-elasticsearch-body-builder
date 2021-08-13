@@ -93,7 +93,9 @@ class BoolAttr
             foreach ($this->condition['and'] as $item) {
                 $group = !$item['is_not']?($item['is_ignore_score']?'filter':'must'):'must_not';
                 if ($item['type'] == 'group') {
-                    $result['bool'][$group][] = $item['value']($this->createNewSelf($item['is_ignore_score']));
+                    $newSelf = $this->createNewSelf($item['is_ignore_score']);
+                    $item['value']($newSelf);
+                    $result['bool'][$group][] = $newSelf;
                 } elseif ($item['type'] == 'base') {
                     $condition = $this->buildCondition($item['op'],$item['field'],$item['value']);
                     if ($condition instanceof Range) {
@@ -125,7 +127,9 @@ class BoolAttr
             $group = 'should';
             foreach ($this->condition['should'] as $item) {
                 if ($item['type'] == 'group') {
-                    $result['bool'][$group][] = $item['value']($this->createNewSelf($item['is_ignore_score']));
+                    $newSelf = $this->createNewSelf($item['is_ignore_score']);
+                    $item['value']($newSelf);
+                    $result['bool'][$group][] = $newSelf;
                 } elseif ($item['type'] == 'base') {
                     $condition = $this->buildCondition($item['op'],$item['field'],$item['value']);
                     if ($condition instanceof Range) {
