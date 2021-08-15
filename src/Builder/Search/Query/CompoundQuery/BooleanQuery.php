@@ -1,24 +1,27 @@
 <?php
 
 
-namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query;
+namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\CompoundQuery;
 
 
-use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Match;
-use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Range;
-use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool\Term;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\BuilderAbstract;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\PublicTrait\OptionTrait;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\leafQuery\Match;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\leafQuery\Range;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\leafQuery\Term;
 use ZZG\PhpElasticsearchBodyBuilder\Exception\NoRangeOpException;
 
-class BoolAttr
+class BooleanQuery extends BuilderAbstract
 {
+    use OptionTrait;
     private $condition = [
         'should' =>[],
         'and' =>[],
         'or' => []
     ];
-
     private $is_ignore_score = false;
-
+    const BOOST = 'boost';
+    const MINIMUM_SHOULD_MATCH = 'minimum_should_match';
     public function where($field,$op,$value,$isIgnoreScore = null,$isNot = false)
     {
         $this->condition['and'][] =[
@@ -86,9 +89,26 @@ class BoolAttr
     public function toArray(){
         return $this->build();
     }
-    private function build()
+
+    public function setMinimumShouldMatch($value)
+    {
+        $this->setOption(self::MINIMUM_SHOULD_MATCH,$value);
+        return $this;
+    }
+    public function setBoost($value)
+    {
+        $this->setOption(self::BOOST,$value);
+        return $this;
+    }
+    protected function build()
     {
         $result = ['bool' => []];
+        if ($this->issetOption(self::MINIMUM_SHOULD_MATCH)) {
+            $result['bool'][self::MINIMUM_SHOULD_MATCH] = $this->getOption(self::MINIMUM_SHOULD_MATCH);
+        }
+        if ($this->issetOption(self::BOOST)) {
+            $result['bool'][self::BOOST] = $this->getOption(self::BOOST);
+        }
         if (!empty($this->condition['and'])) {
             foreach ($this->condition['and'] as $item) {
                 $group = !$item['is_not']?($item['is_ignore_score']?'filter':'must'):'must_not';

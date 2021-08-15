@@ -1,12 +1,12 @@
 <?php
 
 
-namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool;
+namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\leafQuery;
 
 
 use ZZG\PhpElasticsearchBodyBuilder\Exception\NoRangeOpException;
 
-class Range extends ConditionAbstract
+class Range extends LeafQueryAbstract
 {
     protected $op =[];
 

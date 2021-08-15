@@ -1,14 +1,15 @@
 <?php
 
 
-namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool;
+namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\leafQuery;
 
 
-abstract class ConditionAbstract
+use ZZG\PhpElasticsearchBodyBuilder\Builder\BuilderAbstract;
+
+abstract class LeafQueryAbstract extends BuilderAbstract
 {
     protected $field = '';
     protected $value ;
-    abstract protected function build();
     public function toArray()
     {
         return $this->build();

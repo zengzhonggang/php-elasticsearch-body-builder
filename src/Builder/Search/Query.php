@@ -4,7 +4,13 @@
 namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search;
 
 
-class Query
+use ZZG\PhpElasticsearchBodyBuilder\Builder\BuilderAbstract;
+
+class Query extends BuilderAbstract
 {
 
+    protected function build()
+    {
+        // TODO: Implement build() method.
+    }
 }

@@ -1,10 +1,10 @@
 <?php
 
 
-namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\Bool;
+namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\leafQuery;
 
 
-class Term extends ConditionAbstract
+class Term extends LeafQueryAbstract
 {
     protected function build()
     {
