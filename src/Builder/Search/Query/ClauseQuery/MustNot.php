@@ -4,11 +4,10 @@
 namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\ClauseQuery;
 
 
-class Filter extends ClauseQueryAbstract
+class MustNot extends ClauseQueryAbstract
 {
-
     protected function build()
     {
-        return ['filter' => $this->buildLeafQuery()];
+        return ['mustNot' => $this->buildLeafQuery()];
     }
 }

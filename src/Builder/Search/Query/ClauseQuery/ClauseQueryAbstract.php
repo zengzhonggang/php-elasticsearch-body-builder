@@ -20,18 +20,32 @@ abstract class ClauseQueryAbstract
      * @return array
      * @throws MissLeafQueryException
      */
-    protected function build()
+    protected function buildLeafQuery()
     {
-        if (empty($this->leaf_query)) {
-            throw new MissLeafQueryException();
-        } else if (count($this->leaf_query) == 1) {
-            $result =  $this->leaf_query[0]->toArray();
-        } elseif (count($this->leaf_query) > 1) {
-            foreach ($this->leaf_query as $item) {
+         if (count($this->getLeafQuery()) == 1) {
+            $result =  $this->getLeafQuery()[0]->toArray();
+        } else {
+            foreach ($this->getLeafQuery() as $item) {
                 $result[] = $item->toArray();
             }
         }
         return $result;
+    }
+    public function addLeafQuery($query)
+    {
+        $this->leaf_query[] = $query;
+        return $this;
+    }
+
+    /**
+     * @throws MissLeafQueryException
+     */
+    public function getLeafQuery()
+    {
+        if (empty($this->leaf_query)) {
+            throw new MissLeafQueryException();
+        }
+        return $this->leaf_query;
     }
     public function toArray()
     {
@@ -42,4 +56,5 @@ abstract class ClauseQueryAbstract
     {
         return json_encode($this->build(),JSON_UNESCAPED_UNICODE);
     }
+    abstract protected function build();
 }
