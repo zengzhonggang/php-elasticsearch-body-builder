@@ -8,6 +8,11 @@ trait OptionTrait
 {
     protected $option = [];
 
+    /**
+     * @return array
+     */
+    abstract protected function buildQueryOption();
+
     private function setOption($key,$value)
     {
         $this->option[$key] = $value;
@@ -20,4 +25,14 @@ trait OptionTrait
         return $this->option[$key];
     }
 
+    private function getOptionArray($keys)
+    {
+        $options = [];
+        foreach ($keys as $key) {
+            if ($this->issetOption($key)) {
+                $options[$key] = $this->getOption($key);
+            }
+        }
+        return $options;
+    }
 }

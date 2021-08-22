@@ -55,4 +55,9 @@ class BoostingQuery extends BuilderAbstract
             ]
         ];
     }
+
+    protected function buildQueryOption()
+    {
+        return [];
+    }
 }

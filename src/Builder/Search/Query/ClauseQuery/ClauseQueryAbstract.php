@@ -42,10 +42,14 @@ abstract class ClauseQueryAbstract
      */
     public function getLeafQuery()
     {
-        if (empty($this->leaf_query)) {
+        if (!$this->getLeafQueryCount()) {
             throw new MissLeafQueryException();
         }
         return $this->leaf_query;
+    }
+    public function getLeafQueryCount()
+    {
+        return count($this->leaf_query);
     }
     public function toArray()
     {

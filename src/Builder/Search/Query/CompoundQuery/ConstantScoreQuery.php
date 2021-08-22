@@ -6,10 +6,11 @@ namespace ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\CompoundQuery;
 
 use ZZG\PhpElasticsearchBodyBuilder\Builder\BuilderAbstract;
 use ZZG\PhpElasticsearchBodyBuilder\Builder\PublicTrait\OptionTrait;
+use ZZG\PhpElasticsearchBodyBuilder\Builder\Search\Query\QueryTrait\ConditionBodyTrait;
 
 class ConstantScoreQuery extends BuilderAbstract
 {
-    use OptionTrait;
+    use OptionTrait,ConditionBodyTrait;
     const BOOST = 'boost';
     public function setBoost($value)
     {
@@ -21,6 +22,19 @@ class ConstantScoreQuery extends BuilderAbstract
      */
     protected function build()
     {
-        // TODO: Implement build() method.
+        $result = $this->buildQueryOption();
+        $result['filter'] = $this->buildQueryBody();
+        return [
+            'constant_score' => $result
+        ];
+    }
+
+    private function getIsIgnoreScore($isIgnoreScore = null)
+    {
+        return true;
+    }
+    protected function buildQueryOption()
+    {
+        return $this->getOptionArray([self::BOOST]);
     }
 }
